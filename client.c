@@ -13,29 +13,53 @@
 #include <signal.h>
 #include <unistd.h>
 
+
+/*	1 char == 1 byte
+	1 byte == 8 bits
+
+	every bit is either a 0 or a 1
+
+	bitwise operators:
+	byte >> x  -  shift bits to right by x
+	1011 0110     0101 1011
+
+	byte << y  -   shift bits to left by x
+
+*/
+
 void	send_bit(int pid, char *str, size_t len)
 {
 	int		shift;
 	size_t	i;
 
 	i = 0;
+	// for each char in the str
 	while (i < len)
 	{
 		shift = 0;
+		// for each bit in the char
+		// 01000011
 		while (shift < 8)
 		{
+			// if current bit is 1, send SIGUSR1
 			if ((str[i] >> shift) & 1)
 				kill(pid, SIGUSR1);
+			// else if bit is 0, send SIGUSR2
 			else
 				kill(pid, SIGUSR2);
+			// move to next bit
 			shift++;
-			usleep(75);
+			// delay to declutter server
+			usleep(100);
 		}
+		// move to next char
 		i++;
 	}
 	i = -1;
+	// null byte
 	while (++i < 8)
 	{
+		// 8 0s for a null
 		kill(pid, SIGUSR2);
 		usleep(20);
 	}
@@ -69,6 +93,7 @@ void	clientSend(int pid, char *str, int slen)
 
 int	main(int argc, char **argv)
 {
+	// server PID
 	int					pid;
 	int					slen;
 
@@ -78,8 +103,10 @@ int	main(int argc, char **argv)
 		pid = ft_atoi(argv[1]);
 		while (argv[2][slen])
 			slen++;
+		// wait for return echo signal from server
 		if (signal(SIGUSR1, clientEcho))
 			return (0);
+		// handle sending
 		clientSend(pid, argv[2], slen);
 	}
 	else
